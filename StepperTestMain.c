@@ -55,13 +55,31 @@ void GPIOPortF_Handler(); // Handle GPIO Port F interrupts
 int main(void){
 	unsigned int i=0;
 	Direction = true;
-	Move = true;
+	Move = false;
 	SysTick_Init();
   Stepper_Init();
 	Buttons_Init();
   while(1){
 		
-		
+		if(Move == true){
+			if (Direction == true){
+				for (i=0;i<500; i++) {
+					Stepper_CW(10*T1ms);   // output every 10ms, frequency for the stepper motor is 100Hz.
+				}
+				//Stepper_CW(5*T1ms);
+				Move = false;
+				
+			}else{
+				for (i=0;i<1000; i++) {
+				Stepper_CCW(10*T1ms);   // output every 10ms
+			}
+				Move = false;
+				//Stepper_CCW(10*T1ms);
+			}
+		}else{
+			WaitForInterrupt();
+		}
+		/*
 		//turn clockwise 180 degrees:0.18 degree for each step
 		for (i=0;i<1000; i++) {
       Stepper_CW(10*T1ms);   // output every 10ms, frequency for the stepper motor is 100Hz.
@@ -73,7 +91,7 @@ int main(void){
       Stepper_CCW(10*T1ms);   // output every 10ms
 		}
 	  //SysTick_Wait(500*T1ms);  // wait for 0.5s
-  
+  */
 	} 
 }
 
@@ -81,14 +99,17 @@ void Buttons_Init() {
 	
 	SYSCTL_RCGC2_R |= 0x00000020;		//activate port F clock
 	
-	NVIC_EN1_R |= 0x00004000;		//enable port f interrupts
+	//NVIC_EN1_R |= 0x00004000;		//enable port f interrupts
+	NVIC_EN0_R |= 0x40000000;
 
 	GPIO_PORTF_LOCK_R = 0x4C4F434B;   // Unlock PF  
+	
+	GPIO_PORTF_CR_R |= 0x1F;
 
 	GPIO_PORTF_DIR_R &= ~0x11; 	//PF0 (BTN 2), 4 btn1 is an input
-	//GPIO_PORTF_AFSEL_R &= ~0x11;	//no alternate select function on PF0,4
+	GPIO_PORTF_AFSEL_R &= ~0x11;	//no alternate select function on PF0,4
 	GPIO_PORTF_DEN_R |= 0x11;			//Digital enable for PF0,4
-	//GPIO_PORTF_PCTL_R &= ~0x0000001F;	//PF0,4 as GPIO
+	GPIO_PORTF_PCTL_R &= ~0x0000001F;	//PF0,4 as GPIO
 	GPIO_PORTF_AMSEL_R &= ~0x11;		//disable analog on PF0,4
 	GPIO_PORTF_PUR_R |= 0x11;				//enable pull up resistors for PF0,4
 	GPIO_PORTF_IS_R &= ~0x11; 			// PF0,4 is edge sensitive
@@ -104,16 +125,16 @@ void Buttons_Init() {
 void GPIOPortF_Handler() {
 	if( (GPIO_PORTF_RIS_R & 0x01) != 0x00){ 	// if PF0 BTN 2 is pressed
 		Direction = true;		/// true = clockwise, false = counter cw
-		Move = true;
+		//Move = true;
 		GPIO_PORTF_ICR_R = 0x01;
 	}
 	
 	if( (GPIO_PORTF_RIS_R & 0x10) != 0x00){ 	// if PF4 BTN 1 is pressed
 		Direction = false;		/// true = clockwise, false = counter cw
-		Move = true;
+		//Move = true;
 		GPIO_PORTF_ICR_R = 0x10;
 	}
-	
+	Move = true;
 	//GPIO_PORTF_ICR_R = 0x11; //clear flags
 	
 }

@@ -9,7 +9,8 @@
 
 // Initialize SysTick with core clock.
 void SysTick_Init(void){
-  NVIC_ST_CTRL_R = NVIC_ST_CTRL_CLK_SRC; // enable SysTick with core clock
+  NVIC_ST_CTRL_R |= NVIC_ST_CTRL_CLK_SRC; // enable SysTick with core clock
+	NVIC_ST_CTRL_R |= NVIC_ST_CTRL_ENABLE;
 }
 
 // Time delay using busy wait.

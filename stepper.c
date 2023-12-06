@@ -35,28 +35,39 @@ StateType fsm[4]={
   { 3,{3,1}}, // state 2, PD3-0:0011
   { 9,{0,2}}  // state 3, PD3-0:1001
 };
-unsigned char s; // current state
 
-#define STEPPER  (*((volatile uint32_t *)0x4000703C))  // PORT D, pin: 0,1,2,3
+
+unsigned char sl; // current state
+unsigned char sr; // current state
+
+#define STEPPER_LEFT  (*((volatile uint32_t *)0x400053C0))  // PORT B, pin: 4-7
+#define STEPPER_RIGHT (*((volatile uint32_t *)0x4000503C))  // PORT B, pin: 0,1,2,3
+	
+
+	
 	
 // Move 1.8 degrees clockwise, delay is the time to wait after each step
-void Stepper_CW(uint32_t delay){
-  s = fsm[s].Next[CLOCKWISE]; // clock wise circular
-  STEPPER = fsm[s].Out; // step motor
-  SysTick_Wait(delay);
+void Stepper_L_CW(uint32_t delay){
+  sl = fsm[sl].Next[CLOCKWISE]; // clock wise circular
+  //STEPPER_LEFT = fsm[sl].Out; // step motor
+	GPIO_PORTB_DATA_R &= 0x0F;
+	GPIO_PORTB_DATA_R |= (fsm[sl].Out << 4); 
+	SysTick_Wait(delay);
 }
 // Move 1.8 degrees counterclockwise, delay is wait after each step
-void Stepper_CCW(uint32_t delay){
-  s = fsm[s].Next[COUNTERCLOCKWISE]; // counter clock wise circular
-  STEPPER = fsm[s].Out; // step motor
+void Stepper_L_CCW(uint32_t delay){
+  sl = fsm[sl].Next[COUNTERCLOCKWISE]; // counter clock wise circular
+  //STEPPER_LEFT = fsm[sl].Out; // step motor 
+	GPIO_PORTB_DATA_R &= 0x0F;
+	GPIO_PORTB_DATA_R |= (fsm[sl].Out << 4);
   SysTick_Wait(delay); // blind-cycle wait
 }
 // Initialize Stepper interface
-void Stepper_Init(void){
+void Stepper_L_Init(void){
 //  SYSCTL_RCGCGPIO_R |= 0x08; // 1) activate port D
   SYSCTL_RCGC2_R |= 0x08; // 1) activate port D
-  SysTick_Init();
-  s = 0; 
+  //SysTick_Init();
+  sl = 0; 
                                     // 2) no need to unlock PD3-0
   GPIO_PORTD_AMSEL_R &= ~0x0F;      // 3) disable analog functionality on PD3-0
   GPIO_PORTD_PCTL_R &= ~0x0000FFFF; // 4) GPIO configure PD3-0 as GPIO
@@ -64,4 +75,32 @@ void Stepper_Init(void){
   GPIO_PORTD_AFSEL_R &= ~0x0F;// 6) disable alt funct on PD3-0
   GPIO_PORTD_DR8R_R |= 0x0F;  // enable 8 mA drive
   GPIO_PORTD_DEN_R |= 0x0F;   // 7) enable digital I/O on PD3-0 
+}
+void Stepper_R_CW(uint32_t delay){
+  sr = fsm[sr].Next[CLOCKWISE]; // clock wise circular
+  //STEPPER_RIGHT = fsm[sr].Out; // step motor
+	GPIO_PORTB_DATA_R &= 0xF0;
+	GPIO_PORTB_DATA_R |= fsm[sl].Out;
+  SysTick_Wait(delay);
+}
+// Move 1.8 degrees counterclockwise, delay is wait after each step
+void Stepper_R_CCW(uint32_t delay){
+  sr = fsm[sr].Next[COUNTERCLOCKWISE]; // counter clock wise circular
+  //STEPPER_RIGHT = fsm[sr].Out; // step motor
+	GPIO_PORTB_DATA_R &= 0xF0;
+	GPIO_PORTB_DATA_R |= fsm[sl].Out;
+  SysTick_Wait(delay); // blind-cycle wait
+}
+// Initialize Stepper interface
+void Stepper_Init(void){
+  SYSCTL_RCGC2_R |= 0x02; // 1) activate port B
+  //SysTick_Init();
+  sr = 0; 
+                     
+  GPIO_PORTB_AMSEL_R &= ~0xFF;      // 3) disable analog functionality on PB
+  GPIO_PORTB_PCTL_R &= ~0xFFFFFFFF; // 4) GPIO configure PB as GPIO
+  GPIO_PORTB_DIR_R |= 0xFF;   // 5) make PB out
+  GPIO_PORTB_AFSEL_R &= ~0xFF;// 6) disable alt funct on PB
+  GPIO_PORTB_DR8R_R |= 0xFF;  // enable 8 mA drive
+  GPIO_PORTB_DEN_R |= 0xFF;   // 7) enable digital I/O on PB
 }

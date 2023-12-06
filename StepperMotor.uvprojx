@@ -396,14 +396,14 @@
               <FilePath>.\SysTick.c</FilePath>
             </File>
             <File>
-              <FileName>StepperTestMain.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\StepperTestMain.c</FilePath>
-            </File>
-            <File>
               <FileName>stepper.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\stepper.c</FilePath>
+            </File>
+            <File>
+              <FileName>main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\main.c</FilePath>
             </File>
           </Files>
         </Group>
